@@ -1,0 +1,141 @@
+/* ====================================================================
+   Informe de gestión | Libro de fotografías
+   --------------------------------------------------------------------
+   Cada hoja se diseña a 600 x 850 píxeles fijos y luego se escala
+   entera (transform: scale) al ancho real que le da el libro. Así el
+   diseño es idéntico en cualquier pantalla, como una página impresa.
+   Cada hoja interior tiene su propia composición, unidas por tres
+   firmas: la franja roja superior, la franja lateral de color y el
+   sello circular del logotipo.
+   ==================================================================== */
+
+@font-face { font-family: 'Atkinson'; src: url('../fuentes/atkinson-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Atkinson'; src: url('../fuentes/atkinson-700.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'ArchivoBlack'; src: url('../fuentes/archivo-black.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+
+:root {
+  --azul:   #0d00a4;
+  --azul-p: #08006b;
+  --noche:  #040635;
+  --rojo:   #f80000;
+  --vino:   #790000;
+  --gris:   #7f87ad;
+  --hueso:  #f4f5fb;
+  --tinta:  #14183f;
+  --dorado: #eed9a8;
+  --s: 1;
+  --ancho-hoja: 600px;
+  --alto-hoja:  850px;
+  --negra: 'ArchivoBlack', 'Arial Black', Impact, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { background: #e9ebf5; }
+body {
+  font-family: 'Atkinson', 'Segoe UI', Arial, sans-serif;
+  color: var(--tinta);
+  background: radial-gradient(120% 80% at 50% 0%, #f7f8fd 0%, #e2e5f2 70%, #d6daec 100%);
+  min-height: 100vh; display: flex; flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+.saltar { position: absolute; left: -9999px; top: 8px; background: var(--noche); color: #fff; padding: 8px 14px; border-radius: 6px; z-index: 50; }
+.saltar:focus { left: 8px; }
+
+/* ---------- Cabecera y controles ---------- */
+.cabecera { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--noche); color: #fff; border-bottom: 4px solid var(--rojo); }
+.cabecera img { width: 40px; height: 40px; border-radius: 50%; background: #fff; padding: 2px; }
+.cab-nombre { font-family: var(--negra); font-size: 18px; }
+.cab-sub { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--dorado); }
+.cab-btn { margin-left: auto; background: transparent; color: #fff; border: 2px solid rgba(255,255,255,.55); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; min-height: 36px; }
+.cab-btn:hover, .cab-btn:focus-visible { border-color: #fff; outline: none; background: rgba(255,255,255,.12); }
+.pista { text-align: center; font-size: 13px; color: #4a5081; padding: 10px 12px 0; }
+.escenario { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 12px 8px 14px; }
+.libro { width: 100%; max-width: 1040px; }
+.control { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 6px 12px 12px; }
+.control button { width: 48px; height: 48px; border-radius: 50%; border: 0; background: var(--azul); color: #fff; font-size: 18px; cursor: pointer; }
+.control button:disabled { background: #b9bdd6; cursor: default; }
+.control button:focus-visible { outline: 3px solid var(--rojo); outline-offset: 2px; }
+.indicador { min-width: 72px; text-align: center; font-weight: 700; font-size: 15px; }
+.compartir { margin-left: 6px; text-decoration: none; font-weight: 700; font-size: 14px; color: #fff; background: #128c7e; padding: 12px 16px; border-radius: 999px; min-height: 44px; display: inline-flex; align-items: center; }
+.compartir:hover, .compartir:focus-visible { background: #0e6f64; outline: none; }
+.pie { text-align: center; font-size: 12px; color: #5f668a; padding: 8px 14px 18px; }
+
+/* ---------- La hoja (600 x 850 fijos, escalada) ---------- */
+.page { overflow: hidden; background: #fff; }
+.hoja {
+  width: var(--ancho-hoja); height: var(--alto-hoja);
+  transform: scale(var(--s)); transform-origin: top left;
+  position: relative; background: var(--hueso); overflow: hidden;
+  font-size: 15px; line-height: 1.45; color: var(--tinta);
+  border-top: 10px solid var(--rojo);   /* firma 1: la franja roja de las diapositivas */
+}
+.folio { position: absolute; right: 22px; bottom: 14px; font-size: 11px; letter-spacing: .16em; color: var(--gris); z-index: 3; }
+.folio.claro { color: rgba(255,255,255,.7); }
+
+.razon {
+  font-family: var(--negra); font-size: 12.5px; letter-spacing: .3em; text-transform: uppercase;
+  color: var(--dorado); margin: 0 0 10px;
+}
+.razon.vino { color: var(--vino); }
+.razon.dorado { color: var(--dorado); }
+h2 { font-family: var(--negra); font-weight: 400; font-size: 30px; line-height: 1.1; color: var(--azul); letter-spacing: -.01em; }
+h2.centro { text-align: center; }
+.hoja a { color: inherit; }
+
+/* ---------- Portada y contraportada ---------- */
+.page.portada { background: var(--noche); }
+.hoja-portada {
+  background: radial-gradient(120% 90% at 50% 0%, #2b1ad6 0%, var(--azul) 45%, var(--azul-p) 100%);
+  color: #fff; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 44px;
+}
+.hoja-portada::after { content: ''; position: absolute; inset: 16px; border: 1px solid rgba(255,255,255,.22); border-radius: 4px; pointer-events: none; }
+.sello-logo { width: 190px; height: 190px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 8px rgba(255,255,255,.14), 0 18px 40px rgba(0,0,0,.35); margin-bottom: 24px; }
+.sello-logo img { width: 160px; height: 160px; }
+.sello-logo.chico { width: 120px; height: 120px; margin: 18px 0; }
+.sello-logo.chico img { width: 100px; height: 100px; }
+.kicker { font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: #cdd2fb; margin-bottom: 8px; }
+.hoja-portada h1 { font-family: var(--negra); font-weight: 400; font-size: 66px; line-height: .95; letter-spacing: -.02em; }
+.hoja-portada h1 span { display: block; font-size: 44px; color: var(--dorado); margin-top: 6px; }
+.portada-sub { margin-top: 14px; font-size: 17px; color: #eceefb; }
+.pill { margin-top: 20px; display: inline-block; background: var(--vino); color: #fff; padding: 9px 20px; border-radius: 999px; font-size: 14px; letter-spacing: .06em; font-weight: 700; }
+.portada-inv { margin-top: 26px; font-size: 13px; letter-spacing: .32em; text-transform: uppercase; color: var(--dorado); }
+.portada-abre { position: absolute; bottom: 30px; left: 0; right: 0; font-size: 12px; color: rgba(255,255,255,.65); letter-spacing: .1em; }
+h2.grande { font-size: 56px; color: #fff; line-height: .98; margin: 6px 0 10px; }
+.btn { display: inline-block; text-decoration: none; background: var(--azul); color: #fff; font-weight: 700; font-size: 13.5px; padding: 10px 14px; border-radius: 8px; }
+.hoja-contra .contra-btn { margin-top: 22px; background: #fff; color: var(--azul); }
+
+/* ================= INFORME DE GESTIÓN ================= */
+.cabecera img { object-fit: cover; padding: 0; border: 2px solid #fff; }
+.sello-retrato { overflow: hidden; }
+.sello-retrato img, .sello-retrato.chico img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.hoja-portada .h1-informe { font-size: 62px; }
+.hoja-portada .h1-informe span { font-size: 46px; }
+.portada-nombre { margin-top: 18px; font-family: var(--negra); font-size: 23px; line-height: 1.2; color: #fff; }
+.hoja-contra .portada-nombre { margin-top: 0; }
+/* Lámina: la fotografía entera (4:5) a todo el ancho y un pie de 90 px */
+.h-foto { background: var(--noche); }
+.lamina { display: block; width: 600px; height: 750px; }
+.pie-foto { position: absolute; left: 0; right: 0; bottom: 0; height: 90px; background: var(--noche); border-top: 3px solid var(--dorado); padding: 0 70px 0 26px; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.pf-tit { font-family: var(--negra); font-size: 13px; letter-spacing: .3em; text-transform: uppercase; color: var(--dorado); }
+.pf-sub { font-size: 12.5px; letter-spacing: .08em; color: #cdd2fb; }
+.h-foto .folio { bottom: 36px; font-size: 13px; }
+
+/* ---------- Vista de lista ---------- */
+body.lista .libro { display: grid; gap: 18px; justify-items: center; max-width: 640px; }
+body.lista .page { width: 100%; height: calc(var(--alto-hoja) * var(--s)); border-radius: 8px; box-shadow: 0 10px 30px rgba(8,0,107,.16); }
+body.lista .control button, body.lista .indicador, body.lista .pista { display: none; }
+
+.stf__parent { margin: 0 auto; }
+.stf__block { box-shadow: 0 24px 60px rgba(8, 0, 107, .28); border-radius: 6px; }
+
+@media (max-width: 480px) {
+  .cab-sub { display: none; }
+  .cab-btn { font-size: 12px; padding: 5px 10px; }
+  .escenario { padding: 8px 6px 10px; }
+}
+
+/* Ajustes del informe: la hoja apilada nunca es más ancha que su contenido */
+body.lista .page { max-width: calc(var(--ancho-hoja) * var(--s)); }
+.cab-nombre, .cab-btn { white-space: nowrap; }
+@media (max-width: 480px) { .cab-nombre { font-size: 16px; } }
