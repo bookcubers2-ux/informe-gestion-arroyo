@@ -2,12 +2,15 @@
 # par de fotografías, primero las dos juntas a doble hoja (se leen como una sola imagen
 # panorámica) y luego cada una por separado; contraportada. Sin rótulos en las hojas.
 # Uso: python generar.py   (desde esta carpeta; las fotos van en img/01.jpg, 02.jpg, ...)
-import glob, os
+import glob, os, time
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 URL = 'https://bookcubers2-ux.github.io/informe-gestion-arroyo/'
 NOMBRE = 'Dr. PhD Carlos Mauricio Arroyo Balboa'
 GESTION = 'Gestión 2025-2030'
+# Cambia en cada generación: obliga al navegador a bajar estilos y motor nuevos
+# (con los viejos en caché las hojas salen apiladas hacia abajo).
+V = time.strftime('%Y%m%d%H%M')
 
 n = len(glob.glob(os.path.join(AQUI, 'img', '[0-9][0-9].jpg')))
 
@@ -69,7 +72,7 @@ html = f'''<!DOCTYPE html>
 <meta name="twitter:image" content="{URL}img/og.jpg">
 
 <link rel="icon" type="image/jpeg" href="img/retrato.jpg">
-<link rel="stylesheet" href="css/estilos.css">
+<link rel="stylesheet" href="css/estilos.css?v={V}">
 </head>
 <body>
 
@@ -130,7 +133,7 @@ html = f'''<!DOCTYPE html>
   <p>Carrera de Relaciones Internacionales · Universidad Autónoma Gabriel René Moreno · Santa Cruz de la Sierra, Bolivia</p>
 </footer>
 
-<script src="js/libro.js"></script>
+<script src="js/libro.js?v={V}"></script>
 </body>
 </html>
 '''
