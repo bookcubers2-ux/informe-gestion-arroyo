@@ -1,4 +1,5 @@
-# Arma index.html del informe de gestión: portada, una hoja por fotografía y contraportada.
+# Arma index.html del informe de gestión: portada, por cada par de fotografías su vista
+# panorámica y luego las dos láminas, y contraportada. Genera también las panorámicas.
 # Uso: python generar.py   (desde esta carpeta; las fotos van en img/01.jpg, 02.jpg, ...)
 import glob, os
 
@@ -9,17 +10,55 @@ GESTION = 'Gestión 2025-2030'
 
 n = len(glob.glob(os.path.join(AQUI, 'img', '[0-9][0-9].jpg')))
 
-fotos = ''
-for i in range(1, n + 1):
-    fotos += f'''
+from PIL import Image, ImageFilter, ImageEnhance
+
+def panoramica(a, b):
+    """Une dos láminas contiguas en una sola imagen y prepara su fondo desenfocado."""
+    ia = Image.open(os.path.join(AQUI, 'img', f'{a:02d}.jpg'))
+    ib = Image.open(os.path.join(AQUI, 'img', f'{b:02d}.jpg'))
+    pan = Image.new('RGB', (ia.width + ib.width, ia.height))
+    pan.paste(ia, (0, 0)); pan.paste(ib, (ia.width, 0))
+    pan.save(os.path.join(AQUI, 'img', f'pan-{a:02d}-{b:02d}.jpg'), quality=90)
+    alto = 850; ancho = round(pan.width * alto / pan.height)
+    f = pan.resize((ancho, alto)).crop(((ancho - 600) // 2, 0, (ancho - 600) // 2 + 600, alto))
+    f = ImageEnhance.Brightness(f.filter(ImageFilter.GaussianBlur(22))).enhance(0.45)
+    f.save(os.path.join(AQUI, 'img', f'fondo-{a:02d}-{b:02d}.jpg'), quality=70)
+
+def lamina(i, folio):
+    return f'''
     <section class="page" aria-label="Lámina {i} de {n}">
       <div class="hoja h-foto">
         <img class="lamina" src="img/{i:02d}.jpg" alt="Lámina {i} del informe de gestión: fotografías de las actividades de la Carrera de Relaciones Internacionales" width="600" height="750">
-        <div class="pie-foto"><span class="pf-tit">Informe de gestión</span><span class="pf-sub">Relaciones Internacionales · UAGRM</span></div>
-        <span class="folio claro">{i + 1}</span>
+        <div class="pie-foto"><span class="pf-tit">Lámina {i}</span><span class="pf-sub">Informe de gestión · Relaciones Internacionales UAGRM</span></div>
+        <span class="folio claro">{folio}</span>
       </div>
     </section>
 '''
+
+# Orden pedido por el Dr. Arroyo: panorámica de cada par, luego sus dos láminas.
+fotos = ''
+folio = 1
+for a in range(1, n + 1, 2):
+    b = a + 1
+    if b <= n:
+        panoramica(a, b)
+        folio += 1
+        fotos += f'''
+    <section class="page" aria-label="Vista panorámica de las láminas {a} y {b}">
+      <div class="hoja h-pan" style="background-image:url(img/fondo-{a:02d}-{b:02d}.jpg)">
+        <div class="pan-cab"><p class="razon">Vista panorámica</p><h2>Láminas {a} y {b}</h2></div>
+        <a class="pan-marco" href="img/pan-{a:02d}-{b:02d}.jpg" target="_blank" rel="noopener"><img src="img/pan-{a:02d}-{b:02d}.jpg" alt="Vista panorámica que une las láminas {a} y {b} del informe de gestión" width="600" height="375"></a>
+        <p class="pan-pista">Toca la imagen para verla en grande</p>
+        <div class="pie-foto"><span class="pf-tit">Vista panorámica</span><span class="pf-sub">Informe de gestión · Relaciones Internacionales UAGRM</span></div>
+        <span class="folio claro">{folio}</span>
+      </div>
+    </section>
+'''
+    for i in (a, b):
+        if i <= n:
+            folio += 1
+            fotos += lamina(i, folio)
+total = folio + 1
 
 html = f'''<!DOCTYPE html>
 <html lang="es">
@@ -98,7 +137,7 @@ html = f'''<!DOCTYPE html>
 
 <nav class="control" aria-label="Pasar las páginas">
   <button type="button" id="btnAnterior" aria-label="Página anterior">&#9664;</button>
-  <span class="indicador" id="indicador" aria-live="polite">1 / {n + 2}</span>
+  <span class="indicador" id="indicador" aria-live="polite">1 / {total}</span>
   <button type="button" id="btnSiguiente" aria-label="Página siguiente">&#9654;</button>
   <a class="compartir" id="btnCompartir" href="https://wa.me/?text=Informe%20de%20Gesti%C3%B3n%20del%20Dr.%20PhD%20Carlos%20Mauricio%20Arroyo%20Balboa%2C%20Director%20de%20Carrera%20de%20Relaciones%20Internacionales%20de%20la%20UAGRM%3A%20https%3A%2F%2Fbookcubers2-ux.github.io%2Finforme-gestion-arroyo%2F" target="_blank" rel="noopener">Compartir</a>
 </nav>
@@ -113,4 +152,4 @@ html = f'''<!DOCTYPE html>
 </html>
 '''
 open(os.path.join(AQUI, 'index.html'), 'w', encoding='utf-8', newline='\n').write(html)
-print('index.html listo:', n, 'láminas,', n + 2, 'hojas')
+print('index.html listo:', n, 'laminas,', total, 'hojas')

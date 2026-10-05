@@ -83,9 +83,11 @@
       width: ANCHO,
       height: ALTO,
       size: 'stretch',
-      minWidth: 240,
+      /* 2 x minWidth supera el ancho máximo del libro (600): siempre
+         una hoja a la vez, para que panorámica y láminas vayan en orden. */
+      minWidth: 301,
       maxWidth: 600,
-      minHeight: 340,
+      minHeight: 427,
       maxHeight: 850,
       usePortrait: true,
       autoSize: true,
