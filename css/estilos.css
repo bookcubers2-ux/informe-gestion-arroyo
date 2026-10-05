@@ -51,7 +51,6 @@ body {
 .cab-btn:hover, .cab-btn:focus-visible { border-color: #fff; outline: none; background: rgba(255,255,255,.12); }
 .pista { text-align: center; font-size: 13px; color: #4a5081; padding: 10px 12px 0; }
 .escenario { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 12px 8px 14px; }
-.libro { width: 100%; max-width: 600px !important; }   /* una hoja a la vez en toda pantalla (la librería pone su propio máximo en línea) */
 .control { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 6px 12px 12px; }
 .control button { width: 48px; height: 48px; border-radius: 50%; border: 0; background: var(--azul); color: #fff; font-size: 18px; cursor: pointer; }
 .control button:disabled { background: #b9bdd6; cursor: default; }
@@ -62,7 +61,6 @@ body {
 .pie { text-align: center; font-size: 12px; color: #5f668a; padding: 8px 14px 18px; }
 
 /* ---------- La hoja (600 x 850 fijos, escalada) ---------- */
-.page { overflow: hidden; background: #fff; }
 .hoja {
   width: var(--ancho-hoja); height: var(--alto-hoja);
   transform: scale(var(--s)); transform-origin: top left;
@@ -116,34 +114,21 @@ h2.grande { font-size: 56px; color: #fff; line-height: .98; margin: 6px 0 10px; 
 /* Lámina: la fotografía entera (4:5) a todo el ancho y un pie de 90 px */
 .h-foto { background: var(--noche); }
 .lamina { display: block; width: 600px; height: 750px; }
-.pie-foto { position: absolute; left: 0; right: 0; bottom: 0; height: 90px; background: var(--noche); border-top: 3px solid var(--dorado); padding: 0 70px 0 26px; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.pie-foto { position: absolute; left: 0; right: 0; bottom: 0; height: 90px; background: var(--noche); border-top: 3px solid var(--dorado); padding: 0 26px; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
 .pf-tit { font-family: var(--negra); font-size: 13px; letter-spacing: .3em; text-transform: uppercase; color: var(--dorado); }
 .pf-sub { font-size: 12.5px; letter-spacing: .08em; color: #cdd2fb; }
-.h-foto .folio { bottom: 36px; font-size: 13px; }
 
-/* ---------- Vista de lista ---------- */
-body.lista .libro { display: grid; gap: 18px; justify-items: center; max-width: 640px; }
-body.lista .page { width: 100%; height: calc(var(--alto-hoja) * var(--s)); border-radius: 8px; box-shadow: 0 10px 30px rgba(8,0,107,.16); }
-body.lista .control button, body.lista .indicador, body.lista .pista { display: none; }
-
-.stf__parent { margin: 0 auto; }
-.stf__block { box-shadow: 0 24px 60px rgba(8, 0, 107, .28); border-radius: 6px; }
+/* ---------- El visor: vistas de una hoja y de doble hoja ---------- */
+body { overflow-x: hidden; }
+.visor { position: relative; width: 100%; max-width: 1380px; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: pan-y; }
+.vista { position: absolute; left: 50%; top: 50%; width: var(--ancho-hoja); height: var(--alto-hoja); transform: translate(-50%, -50%) scale(var(--e, 1)); perspective: 2400px; visibility: hidden; }
+.vista.v-doble { width: calc(var(--ancho-hoja) * 2); }
+.vista.visible { visibility: visible; }
+.vista-in { display: flex; width: 100%; height: 100%; transform-origin: left center; box-shadow: 0 24px 60px rgba(8, 0, 107, .28); border-radius: 6px; overflow: hidden; backface-visibility: hidden; }
+.vista-in .hoja { flex: none; }
 
 @media (max-width: 480px) {
   .cab-sub { display: none; }
-  .cab-btn { font-size: 12px; padding: 5px 10px; }
+  .cab-nombre { font-size: 16px; }
   .escenario { padding: 8px 6px 10px; }
 }
-
-/* Ajustes del informe: la hoja apilada nunca es más ancha que su contenido */
-body.lista .page { max-width: calc(var(--ancho-hoja) * var(--s)); }
-.cab-nombre, .cab-btn { white-space: nowrap; }
-@media (max-width: 480px) { .cab-nombre { font-size: 16px; } }
-
-/* Vista panorámica: dos láminas unidas, sobre su propio fondo desenfocado */
-.h-pan { background: var(--noche) center / cover no-repeat; color: #fff; }
-.pan-cab { position: absolute; left: 0; right: 0; top: 64px; text-align: center; }
-.pan-cab h2 { color: #fff; font-size: 34px; }
-.pan-marco { position: absolute; left: 0; right: 0; top: 190px; display: block; border-top: 4px solid var(--dorado); border-bottom: 4px solid var(--dorado); box-shadow: 0 18px 40px rgba(0,0,0,.55); }
-.pan-marco img { display: block; width: 600px; height: 375px; }
-.pan-pista { position: absolute; left: 0; right: 0; top: 596px; text-align: center; font-size: 13px; letter-spacing: .1em; color: #eceefb; }

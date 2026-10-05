@@ -1,184 +1,131 @@
 /* ====================================================================
    Informe de gestión | Motor del libro
    --------------------------------------------------------------------
-   Usa StPageFlip (page-flip, licencia MIT). Cada hoja está diseñada a
-   600 x 850 y se escala entera al tamaño real que le da el libro, así
-   el diseño se ve igual en un celular chico y en una pantalla grande.
+   El libro alterna dos tipos de vista: a doble hoja (dos fotografías
+   contiguas que se leen como una sola imagen panorámica, 1200 x 850) y
+   de una hoja (600 x 850). Cada vista se escala entera al espacio que
+   hay en pantalla, así el diseño se ve igual en celular y computadora.
 
-   Accesibilidad: si la persona prefiere movimiento reducido, se arranca
-   en vista de lista (páginas apiladas, sin animación). En cualquier
-   momento se puede cambiar de vista con el botón de la cabecera.
+   Accesibilidad: si la persona prefiere movimiento reducido, las hojas
+   cambian sin animación.
    ==================================================================== */
 (function () {
   'use strict';
 
   var ANCHO = 600, ALTO = 850;
-  var libro = null;
-  var contenedor = document.getElementById('flipbook');
-  var paginas = Array.prototype.slice.call(document.querySelectorAll('.page'));
-  var total = paginas.length;
+  var visor = document.getElementById('visor');
+  var vistas = Array.prototype.slice.call(visor.querySelectorAll('.vista'));
+  var total = vistas.length;
+  var actual = 0;
+  var ocupado = false;
   var indicador = document.getElementById('indicador');
   var btnAnt = document.getElementById('btnAnterior');
   var btnSig = document.getElementById('btnSiguiente');
-  var btnVista = document.getElementById('btnVista');
-  var pista = document.getElementById('pista');
   var prefiereQuieto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var enLista = false;
 
-  /* La escala real de la hoja: ancho que le dio el libro entre 600. */
-  function fijarEscala() {
-    var ref = document.querySelector('.page');
-    if (!ref) return;
-    var w = ref.getBoundingClientRect().width;
-    if (!w) return;
-    document.documentElement.style.setProperty('--s', (w / ANCHO).toFixed(4));
+  function alto(sel) {
+    var el = document.querySelector(sel);
+    return el ? el.offsetHeight : 0;
+  }
+
+  /* Escala de cada tipo de vista según el espacio libre. En pantallas
+     muy bajas (celular acostado) se deja crecer y se desplaza. */
+  function medir() {
+    var anchoDisp = visor.clientWidth;
+    var altoDisp = window.innerHeight - alto('.cabecera') - alto('.pista') - alto('.control') - 36;
+    altoDisp = Math.max(altoDisp, window.innerHeight * 0.85, 240);
+    var eUna = Math.min(anchoDisp / ANCHO, altoDisp / ALTO, 1.15);
+    var eDoble = Math.min(anchoDisp / (ANCHO * 2), altoDisp / ALTO, 1.15);
+    visor.style.height = Math.round(ALTO * eUna) + 'px';
+    vistas.forEach(function (v) {
+      v.style.setProperty('--e', (v.classList.contains('v-doble') ? eDoble : eUna).toFixed(4));
+    });
   }
 
   function actualizarControles() {
-    if (!libro) return;
-    var i = libro.getCurrentPageIndex();
-    var orient = libro.getOrientation();
-    var texto;
-    if (orient === 'landscape' && i > 0 && i < total - 1) {
-      /* En pantalla ancha se ven dos hojas: la izquierda es par (indice impar) */
-      var izq = (i % 2 === 1) ? i : i - 1;
-      texto = (izq + 1) + ' y ' + (izq + 2) + ' / ' + total;
-    } else {
-      texto = (i + 1) + ' / ' + total;
+    indicador.textContent = (actual + 1) + ' / ' + total;
+    btnAnt.disabled = (actual === 0);
+    btnSig.disabled = (actual >= total - 1);
+  }
+
+  /* Pasar de vista: la hoja de arriba gira sobre su lomo (borde
+     izquierdo) y deja ver la siguiente; hacia atrás, vuelve a caer. */
+  function ir(n) {
+    if (ocupado || n < 0 || n >= total || n === actual) return;
+    var sale = vistas[actual], entra = vistas[n];
+    var adelante = n > actual;
+    entra.classList.add('visible');
+
+    function terminar() {
+      sale.classList.remove('visible');
+      sale.style.zIndex = entra.style.zIndex = '';
+      actual = n;
+      ocupado = false;
+      actualizarControles();
     }
-    indicador.textContent = texto;
-    btnAnt.disabled = (i === 0);
-    btnSig.disabled = (i >= total - 1);
-  }
 
-  /* Copias limpias de las hojas, tomadas antes de que la librería las
-     toque. Cada vista (libro o lista) se arma desde estas copias, así
-     nunca arrastra estilos ni clases que la librería deja puestos. */
-  var plantillas = paginas.map(function (p) { return p.cloneNode(true); });
+    var gira = adelante ? sale : entra;
+    var cuerpo = gira.firstElementChild;
+    if (prefiereQuieto || !cuerpo.animate) { terminar(); return; }
 
-  function hojasNuevas() {
-    return plantillas.map(function (p) { return p.cloneNode(true); });
-  }
-
-  /* La librería convierte el contenedor en su "stf__parent" y al
-     destruirse lo saca del documento: se garantiza uno limpio. */
-  function contenedorLimpio() {
-    var escenario = document.getElementById('libro');
-    if (!contenedor || !document.body.contains(contenedor)) {
-      contenedor = document.createElement('div');
-      contenedor.id = 'flipbook';
-      escenario.appendChild(contenedor);
+    ocupado = true;
+    gira.style.zIndex = 3;
+    (adelante ? entra : sale).style.zIndex = 2;
+    var pasos = [
+      { transform: 'rotateY(0deg)', opacity: 1 },
+      { transform: 'rotateY(-84deg)', opacity: 1, offset: 0.85 },
+      { transform: 'rotateY(-96deg)', opacity: 0 }
+    ];
+    if (!adelante) {
+      pasos = [
+        { transform: 'rotateY(-96deg)', opacity: 0 },
+        { transform: 'rotateY(-84deg)', opacity: 1, offset: 0.15 },
+        { transform: 'rotateY(0deg)', opacity: 1 }
+      ];
     }
-    contenedor.className = 'libro';
-    contenedor.removeAttribute('style');
-    contenedor.innerHTML = '';
-    return contenedor;
+    var anim = cuerpo.animate(pasos, { duration: 700, easing: 'ease-in-out' });
+    anim.onfinish = terminar;
+    anim.oncancel = terminar;
   }
 
-  function crearLibro() {
-    contenedorLimpio();
-    paginas = hojasNuevas();
-    paginas.forEach(function (p) { contenedor.appendChild(p); });
-    libro = new St.PageFlip(contenedor, {
-      width: ANCHO,
-      height: ALTO,
-      size: 'stretch',
-      /* 2 x minWidth supera el ancho máximo del libro (600): siempre
-         una hoja a la vez, para que panorámica y láminas vayan en orden. */
-      minWidth: 301,
-      maxWidth: 600,
-      minHeight: 427,
-      maxHeight: 850,
-      usePortrait: true,
-      autoSize: true,
-      showCover: true,
-      mobileScrollSupport: false,
-      drawShadow: true,
-      maxShadowOpacity: 0.45,
-      flippingTime: 800,
-      swipeDistance: 24,
-      /* Tocar la hoja no la pasa: así los enlaces y botones de las
-         páginas funcionan sin sorpresas. Se pasa deslizando, con las
-         flechas o con el teclado. */
-      disableFlipByClick: true,
-      clickEventForward: true,
-      showPageCorners: true
-    });
-    libro.loadFromHTML(paginas);
-    libro.on('flip', actualizarControles);
-    libro.on('changeOrientation', function () { fijarEscala(); actualizarControles(); });
-    libro.on('init', function () { fijarEscala(); actualizarControles(); });
-    setTimeout(function () { fijarEscala(); actualizarControles(); }, 60);
-  }
-
-  function destruirLibro() {
-    if (!libro) return;
-    try { libro.destroy(); } catch (e) {}
-    libro = null;
-    contenedorLimpio();
-    paginas = hojasNuevas();
-    paginas.forEach(function (p) { contenedor.appendChild(p); });
-  }
-
-  /* Vista de lista: hojas apiladas, escaladas al ancho disponible. */
-  function fijarEscalaLista() {
-    var w = Math.min(contenedor.getBoundingClientRect().width, ANCHO);
-    document.documentElement.style.setProperty('--s', (w / ANCHO).toFixed(4));
-  }
-
-  function verLista() {
-    enLista = true;
-    destruirLibro();
-    document.body.classList.add('lista');
-    btnVista.textContent = 'Ver como libro';
-    btnVista.setAttribute('aria-pressed', 'true');
-    fijarEscalaLista();
-  }
-
-  function verLibro() {
-    enLista = false;
-    document.body.classList.remove('lista');
-    btnVista.textContent = 'Ver como lista';
-    btnVista.setAttribute('aria-pressed', 'false');
-    crearLibro();
-  }
-
-  btnVista.addEventListener('click', function () {
-    if (enLista) verLibro(); else verLista();
-  });
-
-  /* Pasar de hoja con flechas o teclado. La librería, con
-     disableFlipByClick activo, solo acepta pasar página si el punto que
-     simula cae en una esquina visible; en el celular (una hoja a la vez)
-     la esquina de "atrás" queda fuera de pantalla y la orden se descarta.
-     Por eso se levanta ese bloqueo solo durante la orden. */
-  function pasar(direccion) {
-    if (!libro) return;
-    var ajustes = libro.getSettings();
-    var bloqueo = ajustes.disableFlipByClick;
-    ajustes.disableFlipByClick = false;
-    try {
-      if (direccion < 0) libro.flipPrev(); else libro.flipNext();
-    } finally {
-      ajustes.disableFlipByClick = bloqueo;
-    }
-  }
+  function pasar(direccion) { ir(actual + direccion); }
 
   btnAnt.addEventListener('click', function () { pasar(-1); });
   btnSig.addEventListener('click', function () { pasar(1); });
 
   document.addEventListener('keydown', function (ev) {
-    if (!libro) return;
     if (ev.key === 'ArrowRight' || ev.key === 'PageDown') { pasar(1); ev.preventDefault(); }
     if (ev.key === 'ArrowLeft'  || ev.key === 'PageUp')   { pasar(-1); ev.preventDefault(); }
+  });
+
+  /* Deslizar con el dedo; un toque en el lado derecho o izquierdo del
+     libro también pasa la hoja. */
+  var x0 = null, y0 = null, deslizo = false;
+  visor.addEventListener('touchstart', function (ev) {
+    x0 = ev.touches[0].clientX; y0 = ev.touches[0].clientY; deslizo = false;
+  }, { passive: true });
+  visor.addEventListener('touchend', function (ev) {
+    if (x0 === null) return;
+    var dx = ev.changedTouches[0].clientX - x0;
+    var dy = ev.changedTouches[0].clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      deslizo = true;
+      pasar(dx < 0 ? 1 : -1);
+    }
+  }, { passive: true });
+  visor.addEventListener('click', function (ev) {
+    if (deslizo) { deslizo = false; return; }
+    if (ev.target.closest && ev.target.closest('a, button')) return;
+    var caja = visor.getBoundingClientRect();
+    var pos = (ev.clientX - caja.left) / caja.width;
+    if (pos > 0.6) pasar(1); else if (pos < 0.4) pasar(-1);
   });
 
   var reloj = null;
   window.addEventListener('resize', function () {
     clearTimeout(reloj);
-    reloj = setTimeout(function () {
-      if (enLista) fijarEscalaLista(); else fijarEscala();
-    }, 120);
+    reloj = setTimeout(medir, 120);
   });
 
   /* Compartir con el menú nativo del teléfono cuando existe */
@@ -194,14 +141,14 @@
     });
   }
 
-  if (typeof St === 'undefined' || !St.PageFlip) {
-    /* Sin la librería, el informe se lee igual, apilada. */
-    pista.textContent = '';
-    verLista();
-  } else if (prefiereQuieto) {
-    pista.textContent = 'Tu dispositivo prefiere menos movimiento: el informe se muestra como lista. Puedes cambiar a libro arriba a la derecha.';
-    verLista();
-  } else {
-    verLibro();
+  /* Para revisar una vista concreta: index.html#5 abre la quinta. */
+  var pedida = parseInt(location.hash.slice(1), 10);
+  if (pedida >= 1 && pedida <= total) {
+    vistas[0].classList.remove('visible');
+    actual = pedida - 1;
+    vistas[actual].classList.add('visible');
   }
+
+  medir();
+  actualizarControles();
 })();
