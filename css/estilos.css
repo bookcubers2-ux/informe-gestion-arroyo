@@ -118,6 +118,11 @@ h2.grande { font-size: 56px; color: #fff; line-height: .98; margin: 6px 0 10px; 
 .pf-tit { font-family: var(--negra); font-size: 13px; letter-spacing: .3em; text-transform: uppercase; color: var(--dorado); }
 .pf-sub { font-size: 12.5px; letter-spacing: .08em; color: #cdd2fb; }
 
+/* Hoja de mosaico: las fotografías de una lámina, una por una */
+.h-mosaico { background: radial-gradient(120% 90% at 50% 0%, #2b1ad6 0%, var(--azul) 45%, var(--azul-p) 100%); }
+.mosaico { position: absolute; left: 0; top: 0; width: 600px; height: 750px; }
+.mosaico img { position: absolute; display: block; object-fit: cover; object-position: center 30%; border: 4px solid #fff; border-radius: 6px; box-shadow: 0 10px 24px rgba(0,0,0,.4); background: #fff; }
+
 /* ---------- El visor: vistas de una hoja y de doble hoja ---------- */
 body { overflow-x: hidden; }
 .visor { position: relative; width: 100%; max-width: 1380px; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: pan-y; }
