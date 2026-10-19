@@ -129,6 +129,80 @@ def hoja(i):
           {PIE}
         </div>'''
 
+# ---------------------------------------------------------------------------------------
+# Fotografías nuevas (zip del Canva del Dr. Arroyo): ../FOTOS-NUEVAS/NN.jpg, una por página original,
+# cada una con su banner (mes + actividad) arriba. Se recorta el banner y el título de la
+# actividad pasa al pie de la hoja. (hoja, mes, [números de foto])
+GRUPOS = [
+    ('Presentación de proyectos', 'Marzo y abril', [1, 2, 4]),
+    ('Alianza con Goethe Zentrum', 'Abril', [3]),
+    ('Conversatorio: Estrecho de Ormuz', 'Abril', [5, 6, 7, 8]),
+    ('Conversatorio: Estrecho de Ormuz', 'Abril', [9, 10, 11, 12]),
+    ('Cumbre Departamental de Justicia', 'Abril', [13]),
+    ('Reunión de coordinación con el CBA', 'Abril', [14, 15]),
+    ('Sala de cómputo y evento cultural', 'Mayo', [16, 17, 18]),
+    ('Rediseño curricular y visita del Cónsul de Brasil', 'Mayo', [19, 20, 21]),
+    ('Inauguración de la biblioteca', 'Mayo', [22, 23, 24, 25]),
+    ('Inauguración de la biblioteca', 'Mayo', [26, 27, 28, 29, 30]),
+    ('Izamiento de bandera · Semana de la Carrera', 'Mayo', [31, 32, 33]),
+    ('Celebración eucarística · Semana de la Carrera', 'Mayo', [34, 35, 36]),
+    ('Reconocimientos y conferencia internacional · Semana de la Carrera', 'Mayo', [37, 38]),
+    ('Feria de emprendedores · Semana de la Carrera', 'Mayo', [39, 40, 41, 42]),
+    ('Feria cultural · Semana de la Carrera', 'Mayo', [43, 44, 45, 46]),
+    ('Feria cultural · Semana de la Carrera', 'Mayo', [47, 48, 49, 50]),
+    ('Danza y Semana de la Carrera', 'Mayo', [51, 52]),
+    ('Defensa de maestría', 'Junio', [53]),
+    ('Cónsul de Ucrania y conversatorio sobre el sistema político chino', 'Junio', [54, 55, 56]),
+    ('Inauguración de la sala de cómputo', 'Junio', [57, 58, 59]),
+    ('Dotación de libros para la biblioteca', 'Junio y julio', [60, 61]),
+    ('Feria cultural de estudiantes de Relaciones Internacionales', 'Julio', [62, 63, 64, 65]),
+    ('Reuniones de coordinación', 'Julio y agosto', [66, 67]),
+    ('Feria de orientación vocacional', 'Agosto', [68, 69, 70, 71, 72]),
+    ('Reuniones de coordinación', 'Septiembre', [73, 74, 78, 79]),
+    ('Firma de convenio con la Alianza Francesa', 'Septiembre', [75, 76, 77]),
+    ('Convenio con SENAVEX y disertación internacional', 'Septiembre', [80, 81, 82, 83]),
+    ('Cumbre Departamental de Justicia', 'Septiembre', [84]),
+]
+
+
+def sin_banner(num):
+    """Abre FOTOS-NUEVAS/NN.jpg sin el banner superior (se detecta la barra azul del título)."""
+    import numpy as np
+    im = Image.open(os.path.join(AQUI, '..', 'FOTOS-NUEVAS', f'{num:02d}.jpg')).convert('RGB')
+    a = np.asarray(im).astype(int)
+    fila = ((a[:, :, 2] > 130) & (a[:, :, 0] < 60) & (a[:, :, 1] < 100)).mean(axis=1)
+    ys = [y for y in range(im.height // 2) if fila[y] > 0.5]
+    y0 = (ys[-1] + 6) if ys else 0
+    return im.crop((0, y0, im.width, im.height))
+
+
+def hoja_grupo(g, titulo, mes, nums):
+    asp, archivos = [], []
+    for k, num in enumerate(nums, 1):
+        im = sin_banner(num)
+        im.thumbnail((1100, 1100))
+        nombre = f'img/g/f{g:02d}-{k}.jpg'
+        im.save(os.path.join(AQUI, nombre), quality=86)
+        asp.append(im.width / im.height); archivos.append(nombre)
+    W, H = AREA
+    f, celdas, nat = mosaico(asp, W, H)
+    if f > 1.15:
+        H = nat * 1.15
+    elif f < 0.87:
+        W = W * H / (nat * 0.87)
+    if (W, H) != AREA:
+        f, celdas, nat = mosaico(asp, W, H)
+    ox = 14 + (AREA[0] - W) / 2; oy = 14 + (AREA[1] - H) / 2
+    fotos = ''.join(
+        f'\n            <img src="{archivos[i]}" alt="{titulo}, {mes}" loading="lazy" style="left:{x + ox:.0f}px;top:{y + oy:.0f}px;width:{w:.0f}px;height:{h:.0f}px">'
+        for i, x, y, w, h in celdas)
+    pie = f'<div class="pie-foto"><span class="pf-tit">{titulo}</span><span class="pf-sub">{mes} · Relaciones Internacionales · UAGRM</span></div>'
+    return f'''<div class="hoja h-mosaico">
+          <div class="mosaico">{fotos}
+          </div>
+          {pie}
+        </div>'''
+
 
 def vista(clase, etiqueta, contenido):
     return f'''
@@ -151,6 +225,14 @@ for a in range(1, n + 1, 2):
         if i <= n:
             vistas += vista('v-una', f'Fotografías de la lámina {i}', hoja_mosaico(i) if i in RECORTES else hoja(i))
             total += 1
+
+hojas_g = [hoja_grupo(g, t, m, nums) for g, (t, m, nums) in enumerate(GRUPOS, 1)]
+for k in range(0, len(hojas_g), 2):
+    if k + 1 < len(hojas_g):
+        vistas += vista('v-doble', f'Fotografías, hojas {k + 1} y {k + 2}', hojas_g[k] + '\n        ' + hojas_g[k + 1])
+    else:
+        vistas += vista('v-una', f'Fotografías, hoja {k + 1}', hojas_g[k])
+    total += 1
 
 html = f'''<!DOCTYPE html>
 <html lang="es">
