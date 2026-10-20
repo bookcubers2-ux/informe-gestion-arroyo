@@ -257,13 +257,79 @@ for a in range(1, n + 1, 2) if False else []:
             vistas += vista('v-una', f'Fotografías de la lámina {i}', hoja_mosaico(i) if i in RECORTES else hoja(i))
             total += 1
 
+def panoramica(k, grupos):
+    """Doble hoja de apertura (como las láminas del Canva): collage a sangre con todas las fotos
+    del par de hojas, en orden, y un título grande encima. Se parte en dos mitades de 600 x 850."""
+    from PIL import ImageDraw, ImageFont, ImageFilter
+    nums = [n for _, _, ns in grupos for n in ns]
+    ims = [sin_banner(n) for n in nums]
+    asp = [im.width / im.height for im in ims]
+    E = 2  # escala: el collage se dibuja a 2400 x 1700
+    f, celdas, nat = mosaico(asp, 1200, 850, True)
+    lienzo = Image.new('RGB', (1200 * E, 850 * E), (4, 6, 53))
+    for i, x, y, w, h in celdas:
+        W_, H_ = round(w * E), round(h * E)
+        im = ims[i]; r = W_ / H_
+        if im.width / im.height > r:
+            cw = im.height * r; im = im.crop(((im.width - cw) / 2, 0, (im.width + cw) / 2, im.height))
+        else:
+            ch = im.width / r; y0 = (im.height - ch) * 0.3; im = im.crop((0, y0, im.width, y0 + ch))
+        lienzo.paste(im.resize((W_, H_)), (round(x * E), round(y * E)))
+    d = ImageDraw.Draw(lienzo)
+    for i, x, y, w, h in celdas:
+        d.rectangle((x * E, y * E, (x + w) * E, (y + h) * E), outline='white', width=6)
+    # título: la actividad con más fotos del par; debajo, los meses
+    cuenta = {}
+    for n in nums:
+        t = T[n - 1][1].split(' · ')[0].split(':')[0]
+        cuenta[t] = cuenta.get(t, 0) + 1
+    titulo = max(cuenta, key=lambda t: (cuenta[t], -nums.index(next(n for n in nums if T[n - 1][1].startswith(t)))))
+    meses = ' y '.join(dict.fromkeys(T[n - 1][0] for n in nums)) + ' 2026'
+    fuente = 'C:/Windows/Fonts/seguibli.ttf'
+    tam = 150
+    while True:
+        F1 = ImageFont.truetype(fuente, tam)
+        lineas, linea = [], ''
+        for pal in titulo.split():
+            prueba = (linea + ' ' + pal).strip()
+            if d.textlength(prueba, font=F1) > 1900 and linea:
+                lineas.append(linea); linea = pal
+            else:
+                linea = prueba
+        lineas.append(linea)
+        if len(lineas) <= 2 or tam < 90:
+            break
+        tam -= 10
+    F2 = ImageFont.truetype(fuente, 80)
+    alto = len(lineas) * tam * 1.15 + 110
+    y = (1700 - alto) / 2
+    sombra = Image.new('RGBA', lienzo.size, (0, 0, 0, 0)); ds = ImageDraw.Draw(sombra)
+    ds.rounded_rectangle((180, y - 50, 2220, y + alto + 40), 40, fill=(4, 6, 53, 170))
+    lienzo = Image.alpha_composite(lienzo.convert('RGBA'), sombra.filter(ImageFilter.GaussianBlur(30))).convert('RGB')
+    d = ImageDraw.Draw(lienzo)
+    for ln in lineas:
+        d.text((1200, y), ln, font=F1, fill=(230, 20, 30), anchor='ma', stroke_width=10, stroke_fill='white')
+        y += tam * 1.15
+    d.text((1200, y + 10), meses, font=F2, fill=(255, 196, 40), anchor='ma', stroke_width=6, stroke_fill=(4, 6, 53))
+    mitades = []
+    for lado in (0, 1):
+        nombre = f'img/g/pan{k:02d}-{lado + 1}.jpg'
+        lienzo.crop((1200 * lado, 0, 1200 * (lado + 1), 1700)).save(os.path.join(AQUI, nombre), quality=86)
+        mitades.append(f'''<div class="hoja h-foto">
+          <img class="lamina lamina-plena" src="{nombre}" alt="{titulo}, {meses}" width="600" height="850">
+        </div>''')
+    return mitades
+
+
 hojas_g = [hoja_grupo(g, t, m, nums) for g, (t, m, nums) in enumerate(GRUPOS, 1)]
 for k in range(0, len(hojas_g), 2):
-    if k + 1 < len(hojas_g):
-        vistas += vista('v-doble', f'Fotografías, hojas {k + 1} y {k + 2}', hojas_g[k] + '\n        ' + hojas_g[k + 1])
-    else:
-        vistas += vista('v-una', f'Fotografías, hoja {k + 1}', hojas_g[k])
+    par = GRUPOS[k:k + 2]
+    izq, der = panoramica(k // 2 + 1, par)
+    vistas += vista('v-doble', f'Apertura: {", ".join(t for t, _, _ in par)}', izq + '\n        ' + der)
     total += 1
+    for j in range(k, min(k + 2, len(hojas_g))):
+        vistas += vista('v-una', f'Fotografías, hoja {j + 1}', hojas_g[j])
+        total += 1
 
 html = f'''<!DOCTYPE html>
 <html lang="es">
