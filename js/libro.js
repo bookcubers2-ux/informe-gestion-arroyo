@@ -50,8 +50,19 @@
 
   /* Pasar de vista: la hoja de arriba gira sobre su lomo (borde
      izquierdo) y deja ver la siguiente; hacia atrás, vuelve a caer. */
+  /* Baja las fotos de la vista n y de sus vecinas (en el HTML van en data-src). */
+  function cargar(n) {
+    for (var k = n - 1; k <= n + 3; k++) {
+      if (!vistas[k]) continue;
+      vistas[k].querySelectorAll('img[data-src]').forEach(function (im) {
+        im.src = im.getAttribute('data-src'); im.removeAttribute('data-src');
+      });
+    }
+  }
+
   function ir(n) {
     if (ocupado || n < 0 || n >= total || n === actual) return;
+    cargar(n);
     var sale = vistas[actual], entra = vistas[n];
     var adelante = n > actual;
     entra.classList.add('visible');
@@ -149,6 +160,7 @@
     vistas[actual].classList.add('visible');
   }
 
+  cargar(actual);
   medir();
   actualizarControles();
 })();

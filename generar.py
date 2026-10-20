@@ -208,9 +208,9 @@ def hoja_grupo(g, titulo, mes, nums):
     asp, archivos = [], []
     for k, num in enumerate(nums, 1):
         im = sin_banner(num)
-        im.thumbnail((1100, 1100))
+        im.thumbnail((800, 800))
         nombre = f'img/g/f{g:02d}-{k}.jpg'
-        im.save(os.path.join(AQUI, nombre), quality=86)
+        im.save(os.path.join(AQUI, nombre), quality=80, optimize=True, progressive=True)
         asp.append(im.width / im.height); archivos.append(nombre)
     W, H = AREA
     f, celdas, nat = mosaico(asp, W, H, True)
@@ -223,7 +223,7 @@ def hoja_grupo(g, titulo, mes, nums):
     ox = 14 + (AREA[0] - W) / 2; oy = 14 + (AREA[1] - H) / 2
     fotos = ''.join(
         f'\n            <figure class="foto" style="left:{x + ox:.0f}px;top:{y + oy:.0f}px;width:{w:.0f}px;height:{h:.0f}px">'
-        f'<img src="{archivos[i]}" alt="{T[nums[i] - 1][1]}, {T[nums[i] - 1][0].lower()}" loading="lazy">'
+        f'<img src="{archivos[i]}" alt="{T[nums[i] - 1][1]}, {T[nums[i] - 1][0].lower()}">'
         f'<figcaption>{T[nums[i] - 1][1]}</figcaption></figure>'
         for i, x, y, w, h in celdas)
     pie = f'<div class="pie-foto"><span class="pf-tit">{titulo}</span><span class="pf-sub">{mes} · Relaciones Internacionales · UAGRM</span></div>'
@@ -314,7 +314,7 @@ def panoramica(k, grupos):
     mitades = []
     for lado in (0, 1):
         nombre = f'img/g/pan{k:02d}-{lado + 1}.jpg'
-        lienzo.crop((1200 * lado, 0, 1200 * (lado + 1), 1700)).save(os.path.join(AQUI, nombre), quality=86)
+        lienzo.crop((1200 * lado, 0, 1200 * (lado + 1), 1700)).resize((900, 1275)).save(os.path.join(AQUI, nombre), quality=80, optimize=True, progressive=True)
         mitades.append(f'''<div class="hoja h-foto">
           <img class="lamina lamina-plena" src="{nombre}" alt="{titulo}, {meses}" width="600" height="850">
         </div>''')
@@ -424,5 +424,7 @@ html = f'''<!DOCTYPE html>
 </body>
 </html>
 '''
+# Las fotos se bajan a medida que se pasan las páginas (js/libro.js), no todas de golpe.
+html = html.replace(' src="img/g/', ' data-src="img/g/')
 open(os.path.join(AQUI, 'index.html'), 'w', encoding='utf-8', newline='\n').write(html)
 print('index.html listo:', n, 'laminas,', total, 'vistas')
