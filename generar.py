@@ -246,7 +246,8 @@ def vista(clase, etiqueta, contenido):
 
 vistas = ''
 total = 2
-for a in range(1, n + 1, 2):
+# Las 14 láminas viejas ya no se muestran (pedido 2026-10-20): solo las fotos en el orden del PDF.
+for a in range(1, n + 1, 2) if False else []:
     b = a + 1
     if b <= n:
         vistas += vista('v-doble', f'Láminas {a} y {b} juntas', hoja(a) + '\n        ' + hoja(b))
