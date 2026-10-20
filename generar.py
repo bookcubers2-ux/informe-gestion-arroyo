@@ -56,11 +56,11 @@ def particiones(k):
             yield [primero] + resto
 
 
-def mosaico(asp, W, H):
+def mosaico(asp, W, H, fijo=False):
     """Reparte las fotos en filas o en columnas buscando el arreglo que menos las recorta.
     Devuelve (deformación, celdas, alto natural); celdas = (índice, x, y, ancho, alto)."""
     mejor = None
-    for orden in permutations(range(len(asp))):
+    for orden in ([tuple(range(len(asp)))] if fijo else permutations(range(len(asp)))):
         for tamanos in particiones(len(asp)):
             grupos, k = [], 0
             for t in tamanos:
@@ -131,38 +131,66 @@ def hoja(i):
 
 # ---------------------------------------------------------------------------------------
 # Fotografías nuevas (zip del Canva del Dr. Arroyo): ../FOTOS-NUEVAS/NN.jpg, una por página original,
-# cada una con su banner (mes + actividad) arriba. Se recorta el banner y el título de la
-# actividad pasa al pie de la hoja. (hoja, mes, [números de foto])
-GRUPOS = [
-    ('Presentación de proyectos', 'Marzo y abril', [1, 2, 4]),
-    ('Alianza con Goethe Zentrum', 'Abril', [3]),
-    ('Conversatorio: Estrecho de Ormuz', 'Abril', [5, 6, 7, 8]),
-    ('Conversatorio: Estrecho de Ormuz', 'Abril', [9, 10, 11, 12]),
-    ('Cumbre Departamental de Justicia', 'Abril', [13]),
-    ('Reunión de coordinación con el CBA', 'Abril', [14, 15]),
-    ('Sala de cómputo y evento cultural', 'Mayo', [16, 17, 18]),
-    ('Rediseño curricular y visita del Cónsul de Brasil', 'Mayo', [19, 20, 21]),
-    ('Inauguración de la biblioteca', 'Mayo', [22, 23, 24, 25]),
-    ('Inauguración de la biblioteca', 'Mayo', [26, 27, 28, 29, 30]),
-    ('Izamiento de bandera · Semana de la Carrera', 'Mayo', [31, 32, 33]),
-    ('Celebración eucarística · Semana de la Carrera', 'Mayo', [34, 35, 36]),
-    ('Reconocimientos y conferencia internacional · Semana de la Carrera', 'Mayo', [37, 38]),
-    ('Feria de emprendedores · Semana de la Carrera', 'Mayo', [39, 40, 41, 42]),
-    ('Feria cultural · Semana de la Carrera', 'Mayo', [43, 44, 45, 46]),
-    ('Feria cultural · Semana de la Carrera', 'Mayo', [47, 48, 49, 50]),
-    ('Danza y Semana de la Carrera', 'Mayo', [51, 52]),
-    ('Defensa de maestría', 'Junio', [53]),
-    ('Cónsul de Ucrania y conversatorio sobre el sistema político chino', 'Junio', [54, 55, 56]),
-    ('Inauguración de la sala de cómputo', 'Junio', [57, 58, 59]),
-    ('Dotación de libros para la biblioteca', 'Junio y julio', [60, 61]),
-    ('Feria cultural de estudiantes de Relaciones Internacionales', 'Julio', [62, 63, 64, 65]),
-    ('Reuniones de coordinación', 'Julio y agosto', [66, 67]),
-    ('Feria de orientación vocacional', 'Agosto', [68, 69, 70, 71, 72]),
-    ('Reuniones de coordinación', 'Septiembre', [73, 74, 78, 79]),
-    ('Firma de convenio con la Alianza Francesa', 'Septiembre', [75, 76, 77]),
-    ('Convenio con SENAVEX y disertación internacional', 'Septiembre', [80, 81, 82, 83]),
-    ('Cumbre Departamental de Justicia', 'Septiembre', [84]),
+# cada una con su banner (mes + actividad) arriba. Se recorta el banner y cada foto lleva su
+# leyenda. El orden es el del PDF del Canva (páginas 1 a 84), sin alterarlo.
+# (mes, leyenda) de cada página, en el orden del PDF.
+T = [
+    ('Marzo', 'Presentación de proyecto'), ('Marzo', 'Presentación de proyecto'),
+    ('Abril', 'Alianza con Goethe-Zentrum, Centro de Idiomas Alemán'), ('Abril', 'Presentación de proyectos'),
+    *[('Abril', 'Estrecho de Ormuz')] * 2, *[('Abril', 'Conversatorio: Estrecho de Ormuz')] * 6,
+    ('Abril', 'Cumbre Departamental de Justicia'), *[('Abril', 'Reunión de coordinación con el CBA')] * 2,
+    ('Mayo', 'Sala de cómputo'), *[('Mayo', 'Evento cultural')] * 2, ('Mayo', 'Reunión de rediseño curricular'),
+    *[('Mayo', 'Visita del Cónsul de Brasil')] * 2, *[('Mayo', 'Inauguración de biblioteca')] * 9,
+    *[('Mayo', 'Izamiento de bandera e inauguración de la Semana de la Carrera')] * 3,
+    *[('Mayo', 'Celebración eucarística · Semana de la Carrera')] * 3,
+    ('Mayo', 'Reconocimiento a estudiantes destacados · Semana de la Carrera'),
+    ('Mayo', 'Conferencia internacional · Semana de la Carrera'),
+    *[('Mayo', 'Feria de emprendedores · Semana de la Carrera')] * 3,
+    *[('Mayo', 'Feria cultural · Semana de la Carrera')] * 9,
+    ('Mayo', 'Danza académica · Semana de la Carrera'), ('Mayo', 'Semana de la Carrera'),
+    ('Junio', 'Defensa de maestría: Evaluación de la calidad y procesos de certificación en educación superior'),
+    *[('Junio', 'Cónsul de Ucrania')] * 2, ('Junio', 'Conversatorio: Sistema político chino'),
+    *[('Junio', 'Inauguración de sala de cómputo')] * 3,
+    *[('Julio', 'Dotación de libros para la biblioteca')] * 2,
+    *[('Julio', 'Feria cultural: Estudiantes de Relaciones Internacionales')] * 4,
+    ('Agosto', 'Reunión de coordinación'), ('Agosto', 'Reunión de coordinación del InterMUN'),
+    *[('Agosto', 'Feria de orientación vocacional')] * 5,
+    *[('Septiembre', 'Reunión de coordinación: CONCICRUZ')] * 2,
+    *[('Septiembre', 'Firma de convenio con la Alianza Francesa')] * 3,
+    ('Septiembre', 'Invitación a seminario internacional'), ('Septiembre', 'Reunión con los cónsules de China'),
+    ('Septiembre', 'Firma de convenio con SENAVEX'), *[('Septiembre', 'Disertación internacional')] * 3,
+    ('Septiembre', 'Cumbre Departamental de Justicia'),
 ]
+assert len(T) == 84
+
+
+def agrupar():
+    """Hojas de hasta 4 fotos en el orden exacto del PDF. Una actividad larga se reparte en
+    hojas parejas; las actividades cortas seguidas del mismo mes comparten hoja."""
+    tramos, i = [], 0
+    while i < len(T):
+        j = i
+        while j < len(T) and T[j] == T[i]:
+            j += 1
+        k = -(-(j - i) // 4)
+        cortes = [i + round((j - i) * c / k) for c in range(k + 1)]
+        tramos += [list(range(a + 1, b + 1)) for a, b in zip(cortes, cortes[1:])]
+        i = j
+    hojas = []
+    for t in tramos:
+        if hojas and len(hojas[-1]) + len(t) <= 3 and T[hojas[-1][0] - 1][0] == T[t[0] - 1][0]                 and len(t) == 1 and len(hojas[-1]) <= 2:
+            hojas[-1] += t
+        else:
+            hojas.append(list(t))
+    grupos = []
+    for nums in hojas:
+        meses = list(dict.fromkeys(T[n - 1][0] for n in nums))
+        tits = list(dict.fromkeys(T[n - 1][1].split(' · ')[0] for n in nums))
+        grupos.append((tits[0] if len(tits) == 1 else 'Actividades de la Carrera', ' y '.join(meses), nums))
+    return grupos
+
+
+GRUPOS = agrupar()
 
 
 def sin_banner(num):
@@ -185,16 +213,18 @@ def hoja_grupo(g, titulo, mes, nums):
         im.save(os.path.join(AQUI, nombre), quality=86)
         asp.append(im.width / im.height); archivos.append(nombre)
     W, H = AREA
-    f, celdas, nat = mosaico(asp, W, H)
+    f, celdas, nat = mosaico(asp, W, H, True)
     if f > 1.15:
         H = nat * 1.15
     elif f < 0.87:
         W = W * H / (nat * 0.87)
     if (W, H) != AREA:
-        f, celdas, nat = mosaico(asp, W, H)
+        f, celdas, nat = mosaico(asp, W, H, True)
     ox = 14 + (AREA[0] - W) / 2; oy = 14 + (AREA[1] - H) / 2
     fotos = ''.join(
-        f'\n            <img src="{archivos[i]}" alt="{titulo}, {mes}" loading="lazy" style="left:{x + ox:.0f}px;top:{y + oy:.0f}px;width:{w:.0f}px;height:{h:.0f}px">'
+        f'\n            <figure class="foto" style="left:{x + ox:.0f}px;top:{y + oy:.0f}px;width:{w:.0f}px;height:{h:.0f}px">'
+        f'<img src="{archivos[i]}" alt="{T[nums[i] - 1][1]}, {T[nums[i] - 1][0].lower()}" loading="lazy">'
+        f'<figcaption>{T[nums[i] - 1][1]}</figcaption></figure>'
         for i, x, y, w, h in celdas)
     pie = f'<div class="pie-foto"><span class="pf-tit">{titulo}</span><span class="pf-sub">{mes} · Relaciones Internacionales · UAGRM</span></div>'
     return f'''<div class="hoja h-mosaico">
